@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Block Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; background: #87ceeb; font-family: 'Press Start 2P', monospace; color: #fff; user-select: none; }
+    .mc { text-shadow: 3px 3px 0 #333; }
+    #overlay { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+      background: rgba(20,20,20,.72); cursor: pointer; text-align: center; }
+    #box { background: #8b8b8b; border: 6px solid; border-color: #fff #373737 #373737 #fff; padding: 28px 36px; max-width: 560px; }
+    #box h1 { margin: 0 0 18px; font-size: 26px; color: #ffd83a; text-shadow: 4px 4px 0 #6b5400; }
+    #box p { font-size: 10px; line-height: 2; margin: 6px 0; text-shadow: 2px 2px 0 #333; }
+    #box .go { margin-top: 18px; display: inline-block; padding: 12px 20px; background: #5aa832; border: 4px solid; border-color: #9be36b #2d5a14 #2d5a14 #9be36b; font-size: 12px; }
+    .tick { position: fixed; left: 50%; top: 50%; background: #fff; box-shadow: 0 0 0 1px #000; pointer-events: none; z-index: 5; }
+    .v { width: 2px; height: 8px; } .h { width: 8px; height: 2px; }
+    #dot { position: fixed; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px; background: #fff; box-shadow: 0 0 0 1px #000; z-index: 5; opacity: 0; }
+    #hit { position: fixed; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px; z-index: 6; pointer-events: none; opacity: 0;
+      background: linear-gradient(45deg, transparent 45%, currentColor 45% 55%, transparent 55%), linear-gradient(-45deg, transparent 45%, currentColor 45% 55%, transparent 55%); }
+    #flash { position: fixed; inset: 0; background: #f00; opacity: 0; pointer-events: none; z-index: 4; }
+    #top { position: fixed; top: 14px; width: 100%; text-align: center; font-size: 12px; z-index: 5; line-height: 1.8; }
+    #hp { position: fixed; left: 20px; bottom: 20px; z-index: 5; font-size: 11px; }
+    #hpbar { width: 220px; height: 18px; background: #333; border: 3px solid #000; margin-top: 6px; }
+    #hpfill { display: block; height: 100%; background: #e33; width: 100%; }
+    #ammo { position: fixed; right: 24px; bottom: 20px; z-index: 5; font-size: 22px; text-align: right; }
+    #ammo small { display: block; font-size: 9px; margin-top: 8px; color: #ffd83a; }
+    #chat { position: fixed; left: 20px; bottom: 92px; z-index: 5; width: 380px; font-size: 9px; line-height: 1.7; }
+    #chat div { background: rgba(0,0,0,.5); padding: 3px 7px; margin-top: 3px; animation: fade 9s forwards; }
+    @keyframes fade { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+    #esp { position: fixed; inset: 0; pointer-events: none; z-index: 3; }
+    #hack { display: none; position: fixed; top: 70px; left: 16px; width: 330px; z-index: 7; background: rgba(0,12,0,.82);
+      border: 2px solid #39ff14; color: #39ff14; font-family: 'Courier New', monospace; font-size: 12px; padding: 10px 12px;
+      box-shadow: 0 0 18px rgba(57,255,20,.5); }
+    #hack .hh { font-weight: bold; letter-spacing: 2px; border-bottom: 1px solid #39ff14; padding-bottom: 6px; margin-bottom: 6px; }
+    #hack .hh span { float: right; animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
+    #hlog div { line-height: 1.5; }
+    #hstat { margin-top: 8px; border-top: 1px dashed #39ff14; padding-top: 6px; color: #b6ffa6; }
+    body.aura #hack { display: block; }
+    body.aura::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 4;
+      background: repeating-linear-gradient(0deg, rgba(0,255,70,.07) 0 2px, transparent 2px 4px);
+      box-shadow: inset 0 0 130px rgba(0,255,70,.3); }
+    body.aura .tick, body.aura #dot { background: #39ff14; }
+  </style>
+</head>
+<body>
+  <div id="overlay"><div id="box">
+    <h1>BLOCK ARENA</h1>
+    <div id="msg">
+      <p>WASD move / SHIFT sprint / SPACE jump</p>
+      <p>C slide / R reload</p>
+      <p>LEFT CLICK shoot / RIGHT CLICK aim down sights</p>
+      <p>Bounce pads launch you, speed pads boost you</p>
+    </div>
+    <div class="go">CLICK TO PLAY</div>
+  </div></div>
+  <canvas id="esp"></canvas>
+  <div class="tick v"></div><div class="tick v"></div><div class="tick h"></div><div class="tick h"></div><div id="dot"></div>
+  <div id="hit"></div><div id="flash"></div>
+  <div id="top" class="mc"></div>
+  <div id="hp" class="mc">HEALTH<div id="hpbar"><i id="hpfill"></i></div></div>
+  <div id="ammo" class="mc"><span id="ammoN"></span><small id="ammoS"></small></div>
+  <div id="chat"></div>
+  <div id="hack">
+    <div class="hh">AURA v3.1 <span>[INJECTED]</span></div>
+    <div id="hlog"></div>
+    <div id="hstat"></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
